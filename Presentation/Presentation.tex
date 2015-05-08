@@ -1,0 +1,157 @@
+\documentclass[mathserif]{beamer}
+
+\usetheme{Berkeley}
+\usecolortheme{orchid}
+
+\usepackage[utf8x]{inputenc}
+\usepackage[english, russian]{babel}
+\usepackage{color}
+\usepackage{graphicx}
+
+\def\putimg<#1>#2{ \includegraphics<#1>[width=\textwidth]{images/#2} }
+
+\title{Поиск семейств оптимальных маршрутов на морских картах}
+\author{Иван Громаковский \\
+Научный руководитель: А. С. Ковалев}
+\institute{Санкт-Петербургский национальный исследовательский университет \\ информационных технологий, механики и оптики}
+\date{13 мая 2015}
+
+\begin{document}
+
+\frame{\titlepage}
+\note{Здравствуйте!}
+
+\begin{frame}
+    \frametitle{Цели работы}
+    \begin{itemize}
+        \item Формализация понятия оптимальности
+        \item Поиск семейств оптимальных маршрутов для принятия
+          решения пользователем
+        \item Реализация алгоритма, работающая в режиме реального времени
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Актуальность задачи}
+    Проблемы поиска единственного маршрута:
+    \begin{itemize}
+        \item Критерии оптимальности не всегда очевидны и формализуемы
+        \item Не оставляет выбора пользователю
+        \item «Пробки»
+        \item TODO: что-то ещё на этот слайд?
+    \end{itemize}
+\end{frame}
+        
+\begin{frame}
+    \frametitle{Оптимальность маршрутов}
+    Под семейством оптимальных маршрутов из точки A в точку B будем
+    понимать максимальное по включению множество маршрутов со следующими свойствами:
+    \begin{itemize}
+        \item Для любых двух маршрутов найдётся препятствие, размеры
+          которого сопоставимы с длиной кратчайшего из маршрутов,
+          которое обходится с разных сторон
+        \item TODO: получше сформулировать первый пункт
+        \item TODO: ещё пункты?
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Существующие алгоритмы}
+    Известные алгоритмы множественного поиска путей в графе:
+    \begin{itemize}
+        \item<1-1> разрабатывались для дргих целей
+        \item<1-1> не учитывают топологию
+        \item<1-1> строят очень похожие маршруты на морских картах
+    \end{itemize}
+    \putimg<2-2>{comparison-with-existing-bad.png} 
+    \putimg<3-3>{comparison-with-existing-good.png} 
+
+\end{frame}
+
+\begin{frame}
+    \frametitle{Предобработка данных}
+    \begin{itemize}
+        \item Карта → полигон
+        \item Оффсет (по-русски?) полигона
+        \item Граф по сетке на плоскости + граф локальной видимости
+        \item Ограничение длины ребра
+        \item Дополнительные рёбра
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Поиск одного маршрута}
+    \begin{itemize}
+        \item Добавление вершин в граф
+        \item Алгоритм Дейкстры
+        \item Сокращение маршрута
+        \begin{itemize}
+            \item Если подпуть A → B → C можно выгодно заменить на A → C, заменяем 
+            \item Подразбиение маршрута
+        \end{itemize}
+        \item Сглаживание маршрута
+        \item TODO: картинка (картинки) для демонстрации
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Поиск нескольких маршрутов}
+    \begin{itemize}
+        \item Поиск одного маршрута
+        \item Обновление весов:
+        \begin{itemize}
+            \item Потенциалы как функция кратчайших расстояний от фиктивной вершины 
+            \item Обновление потенциалов
+            \item Применение потенциалов
+        \end{itemize}
+        \item Проверка критерия остановки:
+        \begin{itemize}
+            \item Длина маршрута
+            \item Метрики на маршрутах
+        \end{itemize}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Обновление весов}
+    \begin{itemize}
+        \item Потенциалы должны быть множителями, а не слагаемымми
+        \item TODO: Картинка
+        \item На маршруте потенциалы меньше, чем поблизости
+        \item TODO: Картинка
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Метрики}
+    \begin{itemize}
+        \item $\rho_1 (P, Q) = max_{u \in P} min_{v \in Q} \rho_g(u, v)$
+        \item TODO: картинка для демонстрации
+        \item TODO: вторая метрика
+        \item TODO: картинка для демонстрации
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Вычисление метрик}
+    \begin{itemize}
+        \item Фиктивная вершина
+        \item Обход Дейкстры, пока не посещены вершины второго пути 
+        \item Заканчиваем, если достигли необходимого значения
+        \item Поиск ближайшей вершины (вторая метрика) — перебором
+        \item На практике затраты на вторую метрику такие же низкие
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Результаты}
+    \begin{itemize}
+        \item<1-1> Разработан и реализован алгоритм построения семейств оптимальных маршрутов 
+        \item<1-1> Проведено сравнение с существующими подходами 
+        \item<1-1> Поиск выполняется примерно за полсекунды 
+    \end{itemize}
+    \putimg<2-2>{results.png}
+\end{frame}
+
+\end{document}
+
