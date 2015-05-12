@@ -2,10 +2,14 @@
 
 \usetheme{Berkeley}
 \usecolortheme{orchid}
+\setbeamertemplate{footline}[frame number]
+\setbeamertemplate{navigation symbols}{}
 
+\usepackage[T2A]{fontenc}
 \usepackage[utf8x]{inputenc}
 \usepackage[english, russian]{babel}
 \usepackage{color}
+\usepackage{amsmath}
 \usepackage{graphicx}
 \graphicspath{ {../Images/} }
 
@@ -32,6 +36,8 @@
 1. И так понятно.
 2. Надо что-то придумать тут.
 3. Меньше секунды на запрос.
+
+TODO: что-то про то, что достаточно приближённого решения?
 }
 
 \begin{frame}{Актуальность задачи}
@@ -79,13 +85,13 @@ TODO: возможно, что-то ещё можно упомянуть?
     \end{itemize}
     \only<4-4> {
         \begin{figure}
-            \includegraphics[width=\textwidth]{comparison-with-existing-bad}
+            \includegraphics[width=.8\textwidth]{comparison-with-existing-bad}
             \caption{Результат работы существующего алгоритма}
         \end{figure}
     }
     \only<5-5> {
         \begin{figure}
-            \includegraphics[width=\textwidth]{comparison-with-existing-good}
+            \includegraphics[width=.8\textwidth]{comparison-with-existing-good}
             \caption{Желаемый результат}
         \end{figure}
     }
@@ -94,7 +100,7 @@ TODO: возможно, что-то ещё можно упомянуть?
 \begin{frame}{Предобработка данных}
     \begin{itemize}[<+->]
         \item Карта → полигон
-        \item Оффсет (TODO: по-русски — смещение?) полигона
+        \item Смещение полигона внутрь
         \item Граф по сетке на плоскости + граф локальной видимости
         \item Ограничение длины ребра
         \item Дополнительные рёбра
@@ -127,67 +133,147 @@ TODO: возможно, что-то ещё можно упомянуть?
             \item<3-> Подразбиение маршрута
         \end{itemize}
         \item<4-> Сглаживание маршрута
-        \item TODO: картинка (картинки) для демонстрации
     \end{itemize}
+    \only<5-5> {
+        \begin{columns}
+            \column{.5\textwidth}
+                \begin{figure}
+                    \includegraphics[width=\textwidth]{raw-path}
+                \end{figure}
+            \column{.5\textwidth}
+                \begin{figure}
+                    \includegraphics[width=\textwidth]{perfect-path}
+                \end{figure}
+        \end{columns}
+    }
 \end{frame}
+\note {
+Добавление вершин: проверяем, принадлежит ли воде. Добавляем вершину в граф. По сетке находим ближайшие вершины и добавляем к ним рёбра.
+Сокращение маршрута: кратчайший путь в навигационном графе не обязан быть действительно кратчайшим путём. Обычно его можно сократить.
+Сглаживание: избавление от очень острых углов, если это возможно (маршрут остаётся на воде). Из-за структуры графа могут возникать острые углы (резкие повороты). Реальные маршруты не такие.
+}
 
 \begin{frame}{Поиск нескольких маршрутов}
     \begin{itemize}
-        \item Поиск одного маршрута
-        \item Обновление весов:
+        \item<1-> Поиск одного маршрута
+        \item<2-> Обновление весов:
         \begin{itemize}
-            \item Потенциалы как функция кратчайших расстояний от фиктивной вершины 
-            \item Обновление потенциалов
-            \item Применение потенциалов
+            \item<2-> Потенциалы как функция кратчайших расстояний от фиктивной вершины 
+            \item<2-> Обновление потенциалов
+            \item<2-> Применение потенциалов
         \end{itemize}
-        \item Проверка критерия остановки:
+        \item<3-> Проверка критерия остановки:
         \begin{itemize}
-            \item Длина маршрута
-            \item Метрики на маршрутах
+            \item<3-> Длина маршрута
+            \item<3-> Метрики на маршрутах
         \end{itemize}
     \end{itemize}
 \end{frame}
+\note {
+На этом слайде описана общая идея алгоритма.
+Поиск одного маршрута: как сказано на прошлом слайде.
+Обновление весов:
+— из фиктивной вершины проводим рёбра нулевого веса во все вершины
+пути. Запускаем алгоритм Дейкстры из фиктивной вершины, находим все
+кратчайшие расстояния. Потенциал — эвристическая функция найденного
+кратчайшего расстояния, определённая для каждой вершины (о ней позднее).
+— обновление потенциалов (максимум/сумма/произведение/что-то ещё). Об этом тоже ещё скажу.
+— обновление весов рёбер (модификация весов в соответствии с потенциалами).
+Критерий остановки: определяем, хороший ли маршрут. Если хороший, то переходим к следующей итерации, иначе прекращаем.
+— длина: если сильно длинее кратчайшего, то плохой.
+— метрики: оцениваем похожесть на другие маршруты. Если есть похожий, то плохо.
+}
 
-\begin{frame}
-    \frametitle{Обновление весов}
-    \begin{itemize}
-        \item Потенциалы должны быть множителями, а не слагаемымми
-        \item TODO: Картинка
-        \item На маршруте потенциалы меньше, чем поблизости
-        \item TODO: Картинка
-    \end{itemize}
+\begin{frame}{Обновление весов}
+    \only<1-1> {
+        \begin{figure}
+            \includegraphics[width=\textwidth]{potentials-multipliers}
+            \caption{Потенциалы должны быть множителями, а не слагаемыми}
+        \end{figure}
+    }
+
+    \only<2-2> {
+        \begin{figure}
+            \includegraphics[width=\textwidth]{weights-on-path}
+            \caption{На маршруте потенциалы меньше, чем поблизости}
+        \end{figure}
+    }
 \end{frame}
+\note {
+На первой картинке видно, что если прибавлять потенциалы, то предпочтение будет отдано более длинному пути, состоящему из двух вершин, а не пути из трёх.
+На второй картинке видно, что если не уменьшать потенциалы на маршруте, то результат будет неестественным.
+TODO: показать, при обновлении потенциалов лучше брать максимум.
+}
 
-\begin{frame}
-    \frametitle{Метрики}
-    \begin{itemize}
-        \item $\rho_1 (P, Q) = max_{u \in P} min_{v \in Q} \rho_g(u, v)$
-        \item TODO: картинка для демонстрации
-        \item TODO: вторая метрика
-        \item TODO: картинка для демонстрации
-    \end{itemize}
+\begin{frame}{Метрики}
+    \only<1-1> {
+        \begin{equation*}
+%        \begin{split}
+            \rho_1 (P, Q) = \max(\max_{u \in P} \min_{v \in Q} \rho_g(u,
+            v), \max_{u \in Q} \min_{v \in P} \rho_g(u, v))
+%        \end{split}
+        \end{equation*}
+        \begin{figure}
+            \includegraphics[width=\textwidth]{hg-definitely-similar}
+        \end{figure}
+    }
+    \only<2-2> {
+        \begin{equation*}
+%        \begin{split}
+            \rho_2 (P, Q) = \max(\max_{u \in P} \frac{\min\limits_{v \in Q_u}
+            \rho_g(u, v)}{\min\limits_{v \in Q_u} \rho_r(u, v)}, \max\limits_{u \in Q} \frac{\min\limits_{v \in P_u}
+            \rho_g(u, v)}{\min\limits_{v \in P_u} \rho_r(u, v)})
+%        \end{split}
+        \end{equation*}
+        \begin{equation*}
+            Q_u = \{ v : \rho_r(u, v) > \varepsilon \}
+        \end{equation*}
+        \begin{figure}
+            \includegraphics[width=.85\textwidth]{hg-maybe-similar}
+        \end{figure}
+    }
 \end{frame}
+\note {
+Первая метрика: основная метрика для оценки похожести маршрутов. Если
+значение очень большое (относительно длины маршрута), то маршруты
+точно непохожи. Если значение очень маленькое, то маршруты точно
+похожи. Иначе считаем, что значения этой метрики недостаточно.
+Вторая метрика: дополнительная метрика. Нужна, чтобы различать
+ситуации, когда мы обошли остров и когда между маршрутами просто так
+получилось большое расстояние в смысле первой метрики.
+}
 
-\begin{frame}
-    \frametitle{Вычисление метрик}
+\begin{frame}{Вычисление метрик}
     \begin{itemize}
         \item Фиктивная вершина
         \item Обход Дейкстры, пока не посещены вершины второго пути 
         \item Заканчиваем, если достигли необходимого значения
         \item Поиск ближайшей вершины (вторая метрика) — перебором
-        \item На практике затраты на вторую метрику такие же низкие
+        \item На практике затраты как на первую, так и на вторую
+          метрику небольшие
     \end{itemize}
 \end{frame}
 
-\begin{frame}
-    \frametitle{Результаты}
-    \begin{itemize}
-        \item<1-1> Разработан и реализован алгоритм построения семейств оптимальных маршрутов 
-        \item<1-1> Проведено сравнение с существующими подходами 
-        \item<1-1> Поиск выполняется примерно за полсекунды 
-    \end{itemize}
-%    \putimg<2-2>{results.png}
+\begin{frame}{Результаты}
+    \only<1-1> {
+        \begin{itemize}
+            \item Разработан и реализован алгоритм построения семейств оптимальных маршрутов 
+            \item Проведено сравнение с существующими подходами 
+            \item Поиск выполняется примерно за полсекунды 
+            \item Используется в ПО «Кронштадт Технологии»
+        \end{itemize}
+    }
+    \only<2-2> {
+        \begin{figure}
+            \includegraphics[width=\textwidth]{results}
+        \end{figure}
+    }
 \end{frame}
+
+\begin{frame}{Спасибо за внимание!}
+    Вопросы?
+\end{frame}
+\note{До свидания!}
 
 \end{document}
 
