@@ -1,6 +1,15 @@
 Articles/
+Examples/
 *.aux
 *.toc
 *.sty
 *.nav
+*.pdf
+*.make
+*.fls
+*.d
+*.blg
+*.out
+*.snm
+auto/
 
