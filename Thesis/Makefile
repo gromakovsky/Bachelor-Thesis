@@ -30,7 +30,7 @@
 #
 fileinfo	:= LaTeX Makefile
 author		:= Chris Monson
-version		:= 2.2.1-alpha8
+version		:= 2.2.1-alpha10
 #
 .DEFAULT_GOAL	:= all
 # Note that the user-global version is imported *after* the source directory,
@@ -43,8 +43,13 @@ version		:= 2.2.1-alpha8
 -include Variables.ini
 -include $(HOME)/.latex-makefile/Variables.ini
 #
-# This can be pdflatex or latex - you can change this by adding the following line to your Makefile.ini:
+# This can be pdflatex or latex - you can change this by adding the following
+# line to your Makefile.ini or Variables.ini file:
 # BUILD_STRATEGY := latex
+# Note that for LuaLaTeX, you would leave this alone - the addition of lua
+# scripting has no impact on the build strategy, which is still pdflatex (as
+# opposed to a latex -> dvips -> ps2pdf strategy).  Instead, you would change
+# the PDFLATEX variable to point to lualatex.  See below.
 BUILD_STRATEGY		?= pdflatex
 # This can be used to pass extra options to latex.
 LATEX_OPTS		?=
@@ -91,6 +96,10 @@ export LC_ALL		?= C
 # to allow everything to be cleaned.
 #neverclean		?= *.pdf
 #
+# A space-separated list of extra files to clean - you can specify this in the
+# .ini files. Make sure you escape them properly, if that's needed!
+#cleanextra		?=
+#
 # Alternatively (recommended), you can add those lines to a Makefile.ini file
 # and it will get picked up automatically without your having to edit this
 # Makefile.
@@ -117,6 +126,21 @@ export LC_ALL		?= C
 #
 #
 # CHANGES:
+# Chris Monson (2014-09-04):
+# * Allow graphic dependencies in texmf directories (anything .fls knows about).
+# Chris Monson (2014-02-14):
+# * Added dia support from issue 174 (thanks to johannes.zarl)
+# Chris Monson (2013-04-09):
+# * Fixed mess with _check_programs - works properly now.
+# Chris Monson (2012-11-23):
+# * Issue 166: Added clean-extra target and cleanextra user variable.
+# Chris Monson (2012-08-02):
+# * Added comments about LuaLaTeX.
+# Chris Monson (2012-06-25):
+# * Bumped version to 2.2.1-alpha9
+# * Built with Holger Dell's changes to fix multiple unnecessary compilations.
+# Chris Monson (2011-11-10):
+# * Issue 144: Help patch from girard.nicolas applied
 # Andrew McNabb (2011-09-30):
 # * Bumped version to 2.2.1-alpha8
 # * Issue 141: No font embedding for gnuplot when not doing pdf
@@ -746,7 +770,7 @@ XINDY		?= xindy
 KPSEWHICH	?= kpsewhich
 GS		?= gs
 # = OPTIONAL PROGRAMS =
-# == For MikTex under Cygwin, to get path names right
+# == For MikTex under Cygwin, to get path names right ==
 CYGPATH		?= cygpath
 # == Makefile Color Output ==
 TPUT		?= tput
@@ -772,7 +796,7 @@ GUNZIP		?= gunzip	# GZipped EPS
 PSNUP		?= psnup
 # == Viewing Stuff ==
 VIEW_POSTSCRIPT	?= gv
-VIEW_PDF	?= evince
+VIEW_PDF	?= xpdf
 VIEW_GRAPHICS	?= display
 
 # Xindy glossaries
@@ -906,6 +930,29 @@ GRAY	?= $(call get-default,$(GREY),)
 #
 # Utility Functions and Definitions
 #
+#
+# Transcript
+# For debug/testing purposes: writes a message to
+# filename.transcript.make for each command that was run, including
+# some human-readable justification for why it had to be run.
+# For example: "Running latex (log-file indicated that this is necessary)"
+# Set WRITE_TRANSCRIPT to something to activate
+WRITE_TRANSCRIPT ?=
+# Set reason for the next run call
+# $(call set-run-reason,message)
+set-run-reason = export run_reason="$1"
+# Log command to the transcript file
+# $(call set-run-reason,command,job_name)
+define transcript
+$(if $(WRITE_TRANSCRIPT), \
+	$(ECHO) "Running $1 ($$run_reason)" >> $2.transcript.make; \
+	export run_reason="", \
+	$(sh_true))
+endef
+# A debugging helper - warns and returns its first arguments, optionally
+# prepending the second argument as a warning prefix.
+# $(call tee-warning,<expression>,[optional warning prefix])
+tee-warning = $(warning $2$1)$1
 
 # Don't call this directly - it is here to avoid calling wildcard more than
 # once in remove-files.
@@ -952,13 +999,15 @@ remove-temporary-files	= $(if $(KEEP_TEMP),:,$(if $1,$(RM) $1,:))
 # $(call cleanse-filename,filename)
 cleanse-filename	= $(subst .,_,$(subst /,__,$1))
 
-# Escape dots
+# Escape dots and forward slashes.
 # $(call escape-fname-regex,str)
 escape-fname-regex	= $(subst /,\\/,$(subst .,\\.,$1))
 
 # Test that a file exists
 # $(call test-exists,file)
 test-exists		= [ -e '$1' ]
+# $(call test-not-exists,file)
+test-not-exists   = [ ! -e '$1' ]
 
 # $(call move-files,source,destination)
 move-if-exists		= $(call test-exists,$1) && $(MV) '$1' '$2'
@@ -1160,6 +1209,7 @@ all_files.gpi		?= $(wildcard *.gpi)
 all_files.dot		?= $(wildcard *.dot)
 all_files.xvg		?= $(wildcard *.xvg)
 all_files.svg		?= $(wildcard *.svg)
+all_files.dia		?= $(wildcard *.dia)
 all_files.png		?= $(wildcard *.png)
 all_files.jpg		?= $(wildcard *.jpg)
 all_files.jpeg		?= $(wildcard *.jpeg)
@@ -1209,6 +1259,7 @@ files.mp	:= $(call filter-buildable,mp)
 files.fig	:= $(call filter-buildable,fig)
 files.xvg	:= $(call filter-buildable,xvg)
 files.svg	:= $(call filter-buildable,svg)
+files.dia	:= $(call filter-buildable,dia)
 files.png	:= $(call filter-buildable,png)
 files.jpg	:= $(call filter-buildable,jpg)
 files.jpeg	:= $(call filter-buildable,jpeg)
@@ -1239,6 +1290,7 @@ default_files.mp	:= $(call filter-default,mp)
 default_files.fig	:= $(call filter-default,fig)
 default_files.xvg	:= $(call filter-default,xvg)
 default_files.svg	:= $(call filter-default,svg)
+default_files.dia	:= $(call filter-default,dia)
 default_files.png	:= $(call filter-default,png)
 default_files.jpg	:= $(call filter-default,jpg)
 default_files.jpeg	:= $(call filter-default,jpeg)
@@ -1281,6 +1333,7 @@ all_stems.gpi		:= $(call get-stems,gpi,all)
 all_stems.dot		:= $(call get-stems,dot,all)
 all_stems.xvg		:= $(call get-stems,xvg,all)
 all_stems.svg		:= $(call get-stems,svg,all)
+all_stems.dia		:= $(call get-stems,dia,all)
 all_stems.png		:= $(call get-stems,png,all)
 all_stems.jpg		:= $(call get-stems,jpg,all)
 all_stems.jpeg		:= $(call get-stems,jpeg,all)
@@ -1300,6 +1353,7 @@ default_stems.gpi		:= $(call get-stems,gpi,default)
 default_stems.dot		:= $(call get-stems,dot,default)
 default_stems.xvg		:= $(call get-stems,xvg,default)
 default_stems.svg		:= $(call get-stems,svg,default)
+default_stems.dia		:= $(call get-stems,dia,default)
 default_stems.png		:= $(call get-stems,png,default)
 default_stems.jpg		:= $(call get-stems,jpg,default)
 default_stems.jpeg		:= $(call get-stems,jpeg,default)
@@ -1319,6 +1373,7 @@ stems.gpi		:= $(call get-stems,gpi)
 stems.dot		:= $(call get-stems,dot)
 stems.xvg		:= $(call get-stems,xvg)
 stems.svg		:= $(call get-stems,svg)
+stems.dia		:= $(call get-stems,dia)
 stems.png		:= $(call get-stems,png)
 stems.jpg		:= $(call get-stems,jpg)
 stems.jpeg		:= $(call get-stems,jpeg)
@@ -1335,6 +1390,7 @@ graphic_source_extensions	:= mp \
 				   gpi \
 				   xvg \
 				   svg \
+				   dia \
 				   dot \
 				   eps.gz
 
@@ -1642,8 +1698,13 @@ endef
 
 # Get source file for specified graphics stem.
 #
-# $(call graphics-source,<stem>)
-define graphics-source
+# Takes the first file it finds by appending the various
+# graphic_source_extensions to the stem, each in turn. Thus, the
+# graphic_source_extensions is a prioritized list of possible sources for
+# graphics files.
+#
+# $(call graphics-source,<stem>,<fls stem>)
+define graphics-source-helper
 $(strip $(firstword \
 	$(wildcard \
 		$(addprefix $1.,\
@@ -1651,13 +1712,38 @@ $(strip $(firstword \
 	$1 \
 ))
 endef
+define graphics-source
+$(call graphics-source-helper,$(call full-path,$1,$2))
+endef
 
 # Get the target file for the specified graphics file/stem
 #
-# $(call graphics-target,<stem>)
-define graphics-target
+# Works by first trying to determine whether any of the
+# graphic_target_extensions match the "stem" (which obviously isn't, since it
+# has an extension). If so, it returns the stem directly, as it is a valid
+# target already.
+#
+# Otherwise, no extensions match the stem. We then try to match against all
+# possible source *and* target extensions. If any match, the stem is extracted
+# from the filename and the default_graphic_extension is appended to it.
+#
+# If nothing matches, the stem is assumed to actually be a stem, and the
+# default_graphic_extension is appended to it unconditionally.
+#
+# The final outcome of this procedure should be the following:
+# - If a filename with extension is passed, and it is recognized, then it is simply returned.
+# - If a filename without an extension is passed, a suitable extension is added.
+# - If the extension is not at all recognized, then nothing is returned.
+#
+# So, either a valid filename is returned, or the empty string.
+#
+# $(call graphics-target,<graphic stem>,<doc stem>)
+define graphics-target-helper
 $(strip $(if 	$(filter $(addprefix %.,$(graphic_target_extensions)),$1), $1,
 	$(firstword $(patsubst $(addprefix %.,$(graphic_source_extensions) $(graphic_target_extensions)), %, $1).$(default_graphic_extension) $1.$(default_graphic_extension))))
+endef
+define graphics-target
+$(call graphics-target-helper,$(call full-path,$1,$2))
 endef
 
 # Outputs all of the graphical dependencies to stdout.  The first argument is
@@ -1748,9 +1834,14 @@ $(SED) \
 -e '  }' \
 -e '  s/'"'"' not found\..*/::::/' \
 -e '  :fileparsed' \
--e '  s/\.e\{0,1\}ps::::$$/::::/' \
+-e '  /\(\.e\{0,1\}ps\)::::$$/{' \
+-e '    s//::::\1/' \
+-e '    b psext' \
+-e '  }' \
+-e '  s/\(\.[^.]*\)::::$$/:::: UNKNOWN=\1/' \
+-e '  :psext' \
 -e '  h' \
--e '  s/\(.*\)::::\(.*\)/# MISSING stem "\1" - allowed extensions are "\2" - leave comment here - it affects the build/' \
+-e '  s/\(.*\)::::\(.*\)/# MISSING stem "\1" - allowed extensions: \2/' \
 -e '  p' \
 -e '  g' \
 -e '  s/::::.*//' \
@@ -1763,11 +1854,11 @@ $(SED) \
 -e 's/.*/-include &.gpi.d/' \
 -e 'p' \
 -e 'g' \
--e 's!.*!$1.d: $$$$(call graphics-source,&)!' \
+-e 's!.*!$1.d: $$$$(call graphics-source,&,$1)!' \
 -e 'p' \
 -e 's/.*//' \
 -e 'x' \
--e 's!.*!$1.$(build_target_extension) $1._graphics: $$$$(call graphics-target,&)!' \
+-e 's!.*!$1.$(build_target_extension) $1._graphics: $$$$(call graphics-target,&,$1)!' \
 -e 'p' \
 -e 'd' \
 $1.log
@@ -1825,6 +1916,34 @@ $(SED) \
 $1 > '$2'
 endef
 
+
+# Create a sed script that returns the fls path to a file from the recorder
+# file. A helper for full-path.
+#
+# If the file is not found, an empty string is returned. If the file is found,
+# the directory in which it is contained is returned (without the filename
+# itself).
+#
+# Think of this as a dirname function that looks things up in the .fls file.
+#
+# $(call fls-path-cmd,<base file name>,<recorder file stem (without .fls)>)
+define fls-path-cmd
+$(SED) \
+-e '/^INPUT \(.*\/\)$(subst /,\/,$(subst .,\.,$1))$$/{' \
+-e '  s//\1/' \
+-e '  q' \
+-e '}' \
+-e 'd' \
+$2.fls
+endef
+
+# Get the full path to a file from the recorder file.
+#
+# #(call full-path,<base file name>,<recorder file stem (without .fls)>)
+define full-path
+$(strip $(shell $(call fls-path-cmd,$1,$2)))$1
+endef
+
 # Checks for build failure due to pstex inclusion, and gives instructions.
 #
 # $(call die-on-pstexs,<parsed file>)
@@ -1868,7 +1987,7 @@ endef
 #
 # $(call die-on-no-aux,<aux stem>)
 define die-on-no-aux
-if [ ! -e '$1.aux' ]; then \
+if $(call test-not-exists,$1.aux); then \
 	$(call colorize-latex-errors,$1.log); \
 	$(ECHO) "$(C_ERROR)Error: failed to create $1.aux$(C_RESET)"; \
 	exit 1; \
@@ -1914,6 +2033,7 @@ define get-bibs
 $(SED) \
 -e '/^\\bibdata/!d' \
 -e 's/\\bibdata{\([^}]*\)}/\1,/' \
+-e 's/[^,]\{1,\}-blx//' \
 -e 's/,\{2,\}/,/g' \
 -e 's/[[:space:]]/\\&/g' \
 -e 's/,/.bib /g' \
@@ -2310,7 +2430,10 @@ $(SED) \
 enlarge_beamer	= $(PSNUP) -l -1 -W128mm -H96mm -pletter
 
 # $(call test-run-again,<source stem>)
-test-run-again	= $(EGREP) -q '^(.*Rerun .*|No file $1\.[^.]+\.)$$' $1.log
+define test-run-again
+$(EGREP) '^(.*Rerun .*|No file $1\.[^.]+\.)$$' $1.log \
+| $(EGREP) -q -v '^(Package: rerunfilecheck.*Rerun checks for auxiliary files.*)$$'
+endef
 
 # This tests whether the build target commands should be run at all, from
 # viewing the log file.
@@ -2319,7 +2442,8 @@ define test-log-for-need-to-run
 $(SED) \
 -e '/^No file $(call escape-fname-regex,$1)\.aux\./d' \
 $1.log \
-| $(EGREP) -q '^(.*Rerun .*|No file $1\.[^.]+\.|No file .+\.tex\.|LaTeX Warning: File.*)$$'
+| $(EGREP) '^(.*Rerun .*|No file $1\.[^.]+\.|No file .+\.tex\.|LaTeX Warning: File.*)$$' \
+| $(EGREP) -q -v '^(Package: rerunfilecheck.*Rerun checks for auxiliary files.*)$$'
 endef
 
 # LaTeX invocations
@@ -2333,7 +2457,8 @@ endef
 #
 # $(call latex,<tex file stem, e.g., $*>,[extra LaTeX args])
 define run-latex
-$(latex_build_program) -jobname='$1' -interaction=batchmode -file-line-error $(LATEX_OPTS) $(if $2,$2,) $1 > /dev/null
+$(latex_build_program) -jobname='$1' -interaction=batchmode -file-line-error $(LATEX_OPTS) $(if $2,$2,) $1 > /dev/null; \
+$(call transcript,latex,$1)
 endef
 
 # $(call latex-color-log,<LaTeX stem>)
@@ -2347,6 +2472,7 @@ then \
 	$(call colorize-makeindex-errors,$3); \
 	$(RM) -f '$2'; \
 	success=0; \
+	$(call transcript,makeindex,$1); \
 fi; \
 [ "$$success" = "1" ] && $(sh_true) || $(sh_false);
 endef
@@ -2358,6 +2484,7 @@ if ! $(XINDY) -q -o $2 -L $(XINDYLANG) -C $(XINDYENC) -I xindy -M $3 -t $4 $1 > 
 	$(call colorize-xindy-errors,$4); \
 	$(RM) -f '$2'; \
 	success=0; \
+	$(call transcript,xindy,$1); \
 fi; \
 [ "$$success" = "1" ] && $(sh_true) || $(sh_false);
 endef
@@ -2368,7 +2495,8 @@ endef
 #
 # $(call run-script,<interpreter>,<input>,<output>)
 define run-script
-[ ! -e '$2.cookie' ] && $(ECHO) "restarts=$(RESTARTS)" > $2.cookie && $(ECHO) "level=$(MAKELEVEL)" >> $2.cookie; \
+$(call test-not-exists,$2.cookie) && $(ECHO) "restarts=$(RESTARTS)" \
+	> $2.cookie && $(ECHO) "level=$(MAKELEVEL)" >> $2.cookie; \
 restarts=`$(SED) -n -e 's/^restarts=//p' $2.cookie`; \
 level=`$(SED) -n -e 's/^level=//p' $2.cookie`; \
 if $(EXPR) $(MAKELEVEL) '<=' $$level '&' $(RESTARTS) '<=' $$restarts >/dev/null; then \
@@ -2382,8 +2510,7 @@ endef
 # BibTeX invocations
 #
 # $(call run-bibtex,<tex stem>)
-run-bibtex	= $(BIBTEX) $1 | $(color_bib)
-
+run-bibtex	= $(BIBTEX) $1 | $(color_bib); $(call transcript,bibtex,$1)
 
 # $(call convert-eps-to-pdf,<eps file>,<pdf file>,[gray])
 # Note that we don't use the --filter flag because it has trouble with bounding boxes that way.
@@ -2522,6 +2649,11 @@ convert-dot-tex		= $(DOT2TEX) '$1' > '$2'
 #
 # $(call convert-svg,<svg file>,<eps/pdf file>,[gray])
 convert-svg	= $(INKSCAPE) --without-gui $(if $(filter %.pdf,$2),--export-pdf,--export-eps)='$2' '$1'
+
+# Converts dia files into .eps files
+#
+# $(call convert-dia,<dia file>,<eps/pdf file>,[gray])
+convert-dia	= $(INKSCAPE) --without-gui $(if $(filter %.pdf,$2),--export-pdf,--export-eps)='$2' '$1'
 
 # Converts xvg files into .eps files
 #
@@ -2772,9 +2904,7 @@ ifeq "$(strip $(BUILD_STRATEGY))" "latex"
 	$(QUIET)$(call make-pdf,$<,$@.temp,$@.log,$*.embed.make); \
 	if [ x"$$?" = x"0" ]; then \
 	    $(if $(VERBOSE),$(CAT) $@.log,:); \
-	    $(RM) -f '$@'; \
-	    $(MV) '$@.temp' '$@'; \
-	    $(TOUCH) '$@'; \
+	    $(MV) -f '$@.temp' '$@'; \
 	    $(call copy-with-logging,$@,$(BINARY_TARGET_DIR)); \
 	else \
 	    $(CAT) $@.log; \
@@ -2856,24 +2986,29 @@ endif
 	run=0; \
 	for i in 1; do \
 		if $(call test-exists,$*.bbl.cookie); then \
+			$(call set-run-reason,$*.bbl.cookie is present); \
 			run=1; \
 			break; \
 		fi; \
 		if $(call test-exists,$*.run.cookie); then \
+			$(call set-run-reason,$*.run.cookie is present); \
 			run=1; \
 		    	break; \
 		fi; \
 		if $(call \
 		test-exists-and-different,$*.auxtarget.cookie,$*.auxtarget.make);\
 		then \
+			$(call set-run-reason,$*.auxtarget.cookie differs from $*.auxtarget.make); \
 			run=1; \
 			break; \
 		fi; \
 		if $(call test-log-for-need-to-run,$*); then \
+			$(call set-run-reason,$*.log indicated that this is necessary); \
 			run=1; \
 			break; \
 		fi; \
-		if [ ! -e $*.1st.*.make ]; then \
+		if $(call test-not-exists,$@.1st.make); then \
+			$(call set-run-reason,$@.1st.make does not exist); \
 			run=1; \
 			break; \
 		fi; \
@@ -2889,7 +3024,11 @@ endif
 			); \
 			$(call run-latex,$*); \
 			$(CP) '$*.log' '$*.'$(RESTARTS)-$$i'.log'; \
-			$(call test-run-again,$*) || break; \
+			if $(call test-run-again,$*); then \
+				$(call set-run-reason,rerun requested by $*.log); \
+			else \
+				break; \
+			fi; \
 		done; \
 	else \
 		$(MV) '$@.1st.make' '$@'; \
@@ -2913,6 +3052,7 @@ endif
 	$(QUIET)\
 	$(if $(filter %.bib,$^),\
 		$(call echo-build,$(filter %.bib,$?) $*.aux,$@); \
+		$(call set-run-reason,dependencies of $@ changed); \
 		$(call run-bibtex,$*); \
 		$(TOUCH) $@.cookie; \
 	) \
@@ -3036,6 +3176,10 @@ endif
 %.pdf:	%.svg
 	$(QUIET)$(call echo-graphic,$^,$@)
 	$(QUIET)$(call convert-svg,$<,$@,$(GRAY))
+
+%.pdf:	%.dia
+	$(QUIET)$(call echo-graphic,$^,$@)
+	$(QUIET)$(call convert-dia,$<,$@,$(GRAY))
 endif
 
 ifeq "$(strip $(BUILD_STRATEGY))" "xelatex"
@@ -3087,6 +3231,10 @@ ifneq "$(default_graphic_extension)" "pdf"
 %.eps: %.svg $(if $(GRAY),$(gray_eps_file))
 	$(QUIET)$(call echo-graphic,$^,$@)
 	$(QUIET)$(call convert-svg,$<,$@,$(GRAY))
+
+%.eps: %.dia $(if $(GRAY),$(gray_eps_file))
+	$(QUIET)$(call echo-graphic,$^,$@)
+	$(QUIET)$(call convert-dia,$<,$@,$(GRAY))
 
 # Similarly for these, we don't need eps if we have supported extensions
 # already.
@@ -3165,6 +3313,7 @@ endif
 %.$(build_target_extension).1st.make %.d %.aux %.aux.make %.fls: %.tex
 	$(QUIET)$(call echo-build,$<,$*.d $*.$(build_target_extension).1st.make,$(RESTARTS)-1)
 	$(QUIET)\
+	$(call set-run-reason,need to build .d and .$(build_target_extension).1st.make); \
 	$(call run-latex,$*,-recorder) || $(sh_true); \
 	$(CP) '$*.log' '$*.$(RESTARTS)-1.log'; \
 	$(call die-on-import-sty,$*.log); \
@@ -3260,12 +3409,12 @@ _check_programs:
 	case $$p in \
 		=*) $(ECHO); $(ECHO) "$$p";; \
 		*) \
-			$(ECHO) -n "$$p:$$spaces" | $(SED) -e 's/^\(.\{0,20\}\).*$$/\1/'; \
-			loc=`$(WHICH) $$p`; \
+			n=`$(ECHO) "$$p:$$spaces" | $(SED) -e 's/^\(.\{0,20\}\).*$$/\1/'`; \
+			loc=`$(WHICH) $$p 2>/dev/null`; \
 			if [ x"$$?" = x"0" ]; then \
-				$(ECHO) "$(C_SUCCESS)Found:$(C_RESET) $$loc"; \
+				$(ECHO) "$$n$(C_SUCCESS)Found:$(C_RESET) $$loc"; \
 			else \
-				$(ECHO) "$(C_FAILURE)Not Found$(C_RESET)"; \
+				$(ECHO) "$$n$(C_FAILURE)Not Found$(C_RESET)"; \
 			fi; \
 			;; \
 	esac; \
@@ -3375,7 +3524,7 @@ clean-tex: clean-deps
 # even want to keep pstex functionality, so my motivation is not terribly high
 # for doing it right.
 clean-graphics:
-	$(QUIET)$(call clean-files,$(all_graphics_targets) *.gpi.d *.pstex *.pstex_t *.dot_t)
+	$(QUIET)$(call clean-files,$(all_graphics_targets) *.gpi.d *.pstex *.pstex_t *.dot_t *-converted-to.pdf)
 
 .PHONY: clean-backups
 clean-backups:
@@ -3388,8 +3537,12 @@ clean-auxiliary:
 .PHONY: clean-nographics
 clean-nographics: clean-tex clean-deps clean-backups clean-auxiliary ;
 
+.PHONY: clean-extra
+clean-extra:
+	$(QUIET)$(call clean-files,$(cleanextra))
+
 .PHONY: clean
-clean: clean-generated clean-tex clean-graphics clean-deps clean-backups clean-auxiliary ;
+clean: clean-generated clean-tex clean-graphics clean-deps clean-backups clean-auxiliary clean-extra ;
 
 #
 # HELP TARGETS
@@ -3458,12 +3611,14 @@ define help_text
 #          neverclean := *.pdf *.ps
 #          onlysources.tex := main.tex
 #          LATEX_COLOR_WARNING := 'bold red uline'
+#          PDFLATEX := lualatex
 #
 #          And this would override the neverclean setting to ensure that pdf
 #          and ps files always remain behind, set the makefile to treat all
 #          .tex files that are not "main.tex" as includes (and therefore not
 #          default targets).  It also changes the LaTeX warning output to be
-#          red, bold, and underlined.
+#          red, bold, and underlined.  Finally, it specifies that you want to
+#          allow Lua scripting by invoking lualatex instead of pdflatex.
 #
 #          There are numerous variables in this file that can be overridden in
 #          this way.  Search for '?=' to find them all.
@@ -3484,7 +3639,7 @@ define help_text
 #             ./generating_script.weird_lang > $$@
 #
 #          In this file, you have access to all of the variables that the
-#          makefile creates, like $(onlysources.tex).  While accessing those can
+#          makefile creates, like $$(onlysources.tex).  While accessing those can
 #          be somewhat brittle (they are implementation details and may change),
 #          it is a great way to test your ideas when submitting feature requests.
 #
