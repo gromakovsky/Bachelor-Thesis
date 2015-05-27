@@ -134,7 +134,7 @@
         \begin{figure}
             \includegraphics[width=.95\textwidth]{Introduction/existing-bad}
 
-            Алгоритм из Yongtaek, Hyunmyung, 2005
+            Lim, Kim, 2005
         \end{figure}
     }
 \end{frame}
@@ -192,7 +192,7 @@
                 \rho_g(u, v)}{\min\limits_{v \in P_u} \rho_r(u, v)})
             \end{equation*}
             \begin{equation*}
-                Q_u = \{ v : \rho_r(u, v) > \varepsilon \}
+                Q_u = \{ v \in Q : \rho_r(u, v) > \varepsilon \cdot len(Q) \}
             \end{equation*}
         \end{figure}
     }
@@ -223,9 +223,9 @@
         \begin{figure}
             \includegraphics[width=.9\textwidth]{Solution/metrics/1-uncertain-2-dissimilar-closest}
             
-            $\frac{\rho_1}{l_{min}} = \frac{331}{781} = 0.42$
+            $\frac{\rho_1}{l_{min}} = \frac{307}{814} = 0.38$
 
-            $\rho_2 = \frac{331}{255} = 1.3$
+            $\rho_2 = \frac{307}{251} = 1.22$
         \end{figure}
     }
     \only<6> {
@@ -379,7 +379,7 @@
             \State g' $\gets$ graph\_with\_fake(p)
             \State limit $\gets \frac{len}{C_1}$
             \State d $\gets$ shortest\_in\_radius(g', fake, limit)
-            \ForAll{b in vertices}
+            \ForAll{v in vertices}
             \State potential = $1 + (max\_potential - 1) \cdot \frac{limit - d[v]}{limit}$
             \State pot[v] = max(pot[v], potential)
             \EndFor
@@ -423,9 +423,13 @@
 \begin{frame}{Результаты}
     \only<1> {
         \begin{itemize}
-            \item Разработан и реализован алгоритм построения семейств оптимальных маршрутов 
+            \item На основе предложенного алгоритма разработан программный модуль,
+              решающий задачу построения требуемых семейств маршрутов
             \item Время поиска не превышает одну секунду
             \item Используется в 3D-клиенте ЗАО «Кронштадт Технологии»
+            \item Получено заключение экспертов ЗАО «ОСК-Транзас», подтверждающее,
+              что разработанный программный модуль удовлетворяет предъявленным
+              требованиям
         \end{itemize}
     }
     \only<2> {
@@ -448,7 +452,7 @@
 
 \end{frame}
 \note {
-TODO: экспертное заключение
+Типа вот вам результаты, всё круто, я хорош.
 }
 
 \begin{frame}{Спасибо за внимание!}
@@ -464,7 +468,7 @@ TODO: экспертное заключение
 \begin{frame}[noframenumbering]{Обновление весов}
     \only<1> {
         \begin{figure}
-            \includegraphics[width=\textwidth]{potentials-multipliers}
+            \includegraphics[width=\textwidth]{Solution/potentials-multipliers}
 
             Потенциалы должны быть множителями, а не слагаемыми
         \end{figure}
