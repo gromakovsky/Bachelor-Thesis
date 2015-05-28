@@ -13,4 +13,5 @@ Examples/
 *.snm
 auto/
 *.bbl
+*.temp
 
