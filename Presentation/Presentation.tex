@@ -9,7 +9,7 @@
 \usepackage[T2A]{fontenc}
 \usepackage{lmodern}
 \usepackage[utf8x]{inputenc}
-\usepackage[english, russian]{babel}
+\usepackage[english, russian, main=russian]{babel}
 \usepackage{graphicx}
 
 \usepackage{algpseudocode}
@@ -20,13 +20,14 @@
 
 \graphicspath{ {../Images/} }
 
-% workaroung warning
+% workaround warning
 \let\Tiny=\tiny
 
 \title{Построение семейств оптимальных маршрутов на морских картах}
 \author{Иван Громаковский \\
-Научный руководитель: А. С. Ковалев}
-\institute{Санкт-Петербургский национальный исследовательский университет \\ информационных технологий, механики и оптики}
+  {\small Научный руководитель: А. С. Ковалев}}
+\institute{Санкт-Петербургский национальный исследовательский
+  университет \\ информационных технологий, механики и оптики}
 \date{}
 
 \begin{document}
@@ -39,16 +40,14 @@
 \subsection{Неформальная постановка}
 
 \begin{frame}{Описание задачи}
-    \only<1-3> {
+    \only<1-2> {
         \begin{itemize}
             \item Имеется морская навигационная карта
             \item Требуется предоставить возможность найти как можно
               больше непохожих маршрутов между двумя точками
             \item Задача поддержки принятия решения ⇒ real time
-            \item<2-3> \alert{Не требуется находить кратчайший маршрут, однако
-              маршруты должны быть не сильно длиннее кратчайшего}
         \end{itemize}
-        \uncover<3> {
+        \uncover<2> {
             \begin{columns}
                 \column{.5\textwidth}
                     \begin{figure}
@@ -65,9 +64,9 @@
             \end{columns}
         }
     }
-    \only<4> {
+    \only<3> {
         \begin{figure}
-            \includegraphics[width=.95\textwidth]{Introduction/my-good}
+            \includegraphics[width=.88\textwidth]{Introduction/my-good}
 
             Пример
         \end{figure}
@@ -81,10 +80,6 @@
 решения. Само решение принимается пользователем в голове, поэтому
 основной принцип подобных задач в том, что они должны решаться в
 режиме реального времени, чтобы не сбивать пользователя с мыслей.
-
-Важно отметить, что в задаче не подразумевается поиск кратчайшего
-маршрута. Суть задачи в предложении альтернативных путей, которые
-потенциально могли бы быть выбраны.
 
 На картинках проиллюстрировано понятие непохожести маршрутов. Для
 простоты взят небольшой остров, но вместо него мог бы быть и материк.
@@ -106,16 +101,17 @@
 возникают следующие проблемы:
 \begin{itemize}
 \item Кратчайший путь (по какой-либо метрике) не всегда оптимален, а
-реальные критерии оптимальности могут быть не очевидны и трудно
-формализуемы.
+  реальные критерии оптимальности могут быть не очевидны и трудно
+  формализуемы.
 
 \item Если по каким-то причинам проплыть по кратчайшему маршруту не
-представляется возможным (например, проходят учения), то возникает
-проблема, потому что нет альтернатив.
+  представляется возможным (например, где-то проходят военные учения),
+  то хочется иметь альтернативу.
 \end{itemize}
 
 При этом неизвестны алгоритмы multipath planning (то есть, поиска
-нескольких маршрутов), которые бы хорошо работали на воде.
+нескольких маршрутов), которые бы хорошо работали для поиска маршрутов
+по воде.
 }
         
 \subsection{Обзор сделанного}
@@ -132,7 +128,7 @@
     }
     \only<2> {
         \begin{figure}
-            \includegraphics[width=.95\textwidth]{Introduction/existing-bad}
+            \includegraphics[width=.88\textwidth]{Introduction/existing-bad}
 
             Lim, Kim, 2005
         \end{figure}
@@ -143,8 +139,7 @@
 им присущи следующие проблемы:
 \begin{itemize}
 \item
-Разрабатывались для других целей: например, поиск маршрутов по дорогам
-или поиск маршрутов на общественном транспорте.
+Разрабатывались для других целей: например, поиск маршрутов по дорогам.
 \item
 Эти алгоритмы в большинстве своём оперируют абстрактными графами, не
 привязанными к конкретным координатам в мире.
@@ -162,7 +157,8 @@
 \begin{frame}{Формальная постановка задачи}
     Дано: множество полигональных препятствий, начальная (S) и конечная (D) точки.
 
-    Найти: множество путей, соединяющих точки S и D и удовлетворяющих требованиям:
+    Найти: множество путей, соединяющих точки S и D, не пересекая
+    препятствия, и удовлетворяющих требованиям:
     \begin{itemize}
         \item отношение длины пути к длине кратчайшего пути
           ограничено сверху константой
@@ -179,82 +175,38 @@
 реальном времени, потребуем не больше секунды на запрос.
 }
 
-\begin{frame}[t]{Метрики на маршрутах}
-    \only<1> {
-        \begin{figure}[c]
-            \begin{equation*}
-                \rho_1 (P, Q) = \max(\max_{u \in P} \min_{v \in Q} \rho_g(u,
-                v), \max_{u \in Q} \min_{v \in P} \rho_g(u, v))
-            \end{equation*}
-            \begin{equation*}
-                \rho_2 (P, Q) = \max(\max_{u \in P} \frac{\min\limits_{v \in Q_u}
-                \rho_g(u, v)}{\min\limits_{v \in Q_u} \rho_r(u, v)}, \max\limits_{u \in Q} \frac{\min\limits_{v \in P_u}
-                \rho_g(u, v)}{\min\limits_{v \in P_u} \rho_r(u, v)})
-            \end{equation*}
-            \begin{equation*}
-                Q_u = \{ v \in Q : \rho_r(u, v) > \varepsilon \cdot len(Q) \}
-            \end{equation*}
-        \end{figure}
-    }
-    \only<2> {
-        \begin{figure}
-            \includegraphics[width=.9\textwidth]{Solution/metrics/1-dissimilar}
-            
-            $\frac{\rho_1}{l_{min}} = \frac{339}{435} = 0.78$
-        \end{figure}
-    }
-    \only<3> {
-        \begin{figure}
-            \includegraphics[width=.9\textwidth]{Solution/metrics/1-uncertain-2-similar}
-            
-            $\frac{\rho_1}{l_{min}} = \frac{502}{1704} = 0.29$
-
-            $\rho_2 = 1$
-        \end{figure}
-    }
-    \only<4> {
-        \begin{figure}
-            \includegraphics[width=.9\textwidth]{Solution/metrics/1-uncertain-2-dissimilar-gclosest}
-            
-            $\frac{\rho_1}{l_{min}} = \frac{307}{814} = 0.38$
-        \end{figure}
-    }
-    \only<5> {
-        \begin{figure}
-            \includegraphics[width=.9\textwidth]{Solution/metrics/1-uncertain-2-dissimilar-closest}
-            
-            $\frac{\rho_1}{l_{min}} = \frac{307}{814} = 0.38$
-
-            $\rho_2 = \frac{307}{251} = 1.22$
-        \end{figure}
-    }
-    \only<6> {
-        \begin{figure}
-            \includegraphics[width=.9\textwidth]{Solution/metrics/1-similar}
-            
-            $\frac{\rho_1}{l_{min}} = \frac{641}{4059} = 0.16$
-        \end{figure}
-    }
+\begin{frame}{Метрики на маршрутах}
+    \begin{figure}
+        \begin{equation*}
+            \rho_1 (P, Q) = \max(\max_{u \in P} \min_{v \in Q} \rho_g(u,
+            v), \max_{u \in Q} \min_{v \in P} \rho_g(u, v))
+        \end{equation*}
+        \begin{equation*}
+            \rho_2 (P, Q) = \max(\max_{u \in P} \frac{\min\limits_{v \in Q_u}
+            \rho_g(u, v)}{\min\limits_{v \in Q_u} \rho_r(u, v)}, \max\limits_{u \in Q} \frac{\min\limits_{v \in P_u}
+            \rho_g(u, v)}{\min\limits_{v \in P_u} \rho_r(u, v)})
+        \end{equation*}
+        \begin{equation*}
+            Q_u = \{ v \in Q : \rho_r(u, v) > \varepsilon \cdot len(Q) \}
+        \end{equation*}
+    \end{figure}
 \end{frame}
 \note {
 Для оценки похожести будем использовать метрики на маршрутах.
 Сказать, что такое $\rho_g$ и $\rho_r$.
 
-Первая метрика берёт для каждой вершины первого пути кратчайшее расстояние до
-ближайшей вершины второго пути, и её значение — максимум этих расстояний.
+Первая метрика берёт для каждой вершины первого пути длину кратчайшего
+расстояния до второго пути, и её значение — максимум этих расстояний.
 В зависимости от отношения её значения к длине кратчайшего из двух
 путей маршруты считаются либо похожими, либо непохожими, либо
-«возможно, похожими». В последнем случае используется вторая метрика.
-
-Вторая метрика аналогична первой, но графовое расстояние до ближайшей
-вершины в графе делится на реальное расстояние до ближайшей вершины в
-мире. Большое значение этой метрики означает, что между путями есть
-какое-то препятствие, поскольку кратчайший путь в графе существенно
-больше реального расстояния до ближайшей вершины в мире. При этом не
-рассматриваются  слишком близкие вершины, поскольку между ними может
+«возможно, похожими». В последнем случае используется вторая метрика,
+которая аналогична первой, но графовое расстояние до ближайшей вершины
+в графе делится на реальное расстояние до ближайшей вершины в мире.
+Большое значение этой метрики означает, что между путями есть какое-то
+препятствие, поскольку кратчайший путь в графе существенно больше
+реального расстояния до ближайшей вершины в мире. При этом не
+рассматриваются слишком близкие вершины, поскольку между ними может
 быть незначительное препятствие.
-
-Все скрытые константы являются параметрами алгоритма.
 }
 
 \section{Решение}
@@ -318,18 +270,17 @@
 маршрута, поскольку он лежит в основе поиска семейств маршрутов.
 
 \begin{itemize}
-\item
-Сначала происходит добавление вершин в граф и рёбер до ближайших
-вершин, находимых по сетке.
-\item
-Сам поиск пути осуществляется с помощью алгоритма Дейкстры.
-\item
-Поскольку граф не является графом видимости, то кратчайший путь в нём
-не обязан быть действительно кратчайшим путём между двумя точками.
-Обычно его можно сократить. Дальше по тексту.
-\item
-В связи со структурой графа возможно появление слишком острых углов в
-маршруте, которые выглядят неестественно, поэтому выполняется их сглаживание.
+\item Сначала происходит добавление вершин в граф и рёбер до ближайших
+  вершин, находимых по сетке.
+\item Сам поиск пути осуществляется с помощью алгоритма Дейкстры.
+\item Поскольку граф не является графом видимости, то кратчайший путь
+  в нём не обязан быть действительно кратчайшим путём между двумя
+  точками. Кратчайший путь в графе не обязан быть действительно
+  кратчайшим маршрутом между двумя точками, обычно его можно
+  сократить. Дальше по тексту.
+\item В связи со структурой графа возможно появление слишком острых
+  углов в маршруте, которые выглядят неестественно, поэтому
+  выполняется их сглаживание.
 \end{itemize}
 
 Про рисунок всё понятно: слева сократилось, справа сгладилось.
@@ -415,7 +366,20 @@
     \end{itemize}
 \end{frame}
 \note {
-Тут вроде понятно
+Для работы в режиме реального времени важно уметь быстро вычислять
+метрики. При вычислении значения первой метрики между двумя маршрутами
+сначала построим граф с фиктивной вершиной и рёбрами нулевого веса до
+вершин первого пути. Из фиктивной вершины заупстим обход Дейкстры,
+пока не посетим все вершины второго пути. Таким образом, для каждой
+вершины второго маршрута будет известна длина кратчайшего пути до вершин
+первого маршрута. Аналогично найдём длины для вершин первого маршрута.
+Наконец, максимум посчитаем перебором, потому что всего вершин в
+маршрутах не очень много. При этом важно закончить поиск, если для
+какой-то вершины найденное значение позволяет утверждать, что маршруты
+точно непохожи.
+Для вычисления второй метрики также нужно находить расстояние до
+ближайшей вершины в мире. Это было сделано простым перебором. На
+практике при таком подходе всё стало быстро работать.
 }
 
 \section{Результаты}
@@ -434,22 +398,9 @@
     }
     \only<2> {
         \begin{figure}
-            \includegraphics[width=\textwidth]{Results/1}
+            \includegraphics[width=.9\textwidth]{Results/1}
         \end{figure}
     }
-
-    \only<3> {
-        \begin{figure}
-            \includegraphics[width=\textwidth]{Results/2}
-        \end{figure}
-    }
-
-    \only<4> {
-        \begin{figure}
-            \includegraphics[width=\textwidth]{Results/3}
-        \end{figure}
-    }
-
 \end{frame}
 \note {
 Типа вот вам результаты, всё круто, я хорош.
@@ -465,6 +416,56 @@
 
 \appendix
 
+\newcommand{\metricspicture}[1] {
+    \includegraphics[width=.88\textwidth]{Solution/metrics/#1}
+}
+
+\begin{frame}[noframenumbering, t]{Обоснование метрик}
+    \only<1> {
+        \begin{figure}
+            \metricspicture{1-dissimilar}
+
+            $\frac{\rho_1}{l_{min}} = \frac{339}{435} = 0.78$
+        \end{figure}
+    }
+    \only<2> {
+        \begin{figure}
+            \metricspicture{1-uncertain-2-similar}
+
+            $\frac{\rho_1}{l_{min}} = \frac{502}{1704} = 0.29$
+
+            $\rho_2 = 1$
+        \end{figure}
+    }
+    \only<3> {
+        \begin{figure}
+            \metricspicture{1-uncertain-2-dissimilar-gclosest}
+
+            $\frac{\rho_1}{l_{min}} = \frac{307}{814} = 0.38$
+        \end{figure}
+    }
+    \only<4> {
+        \begin{figure}
+            \metricspicture{1-uncertain-2-dissimilar-closest}
+
+            $\frac{\rho_1}{l_{min}} = \frac{307}{814} = 0.38$
+
+            $\rho_2 = \frac{307}{251} = 1.22$
+        \end{figure}
+    }
+    \only<5> {
+        \begin{figure}
+            \metricspicture{1-similar}
+
+            $\frac{\rho_1}{l_{min}} = \frac{641}{4059} = 0.16$
+        \end{figure}
+    }
+\end{frame}
+
+\newcommand{\potentialsupdatepicture}[1] {
+    \includegraphics[width=\textwidth, clip=true, trim = 280pt 0 20pt 0]{Solution/potentials-update/#1}
+}
+
 \begin{frame}[noframenumbering]{Обновление весов}
     \only<1> {
         \begin{figure}
@@ -479,14 +480,12 @@
         \begin{columns}
             \column{.5\textwidth}
             \begin{figure}
-                \includegraphics[clip=true, trim = 280pt 0 20pt 0,
-                width=\textwidth]{Solution/potentials-update/accum1}
+                \potentialsupdatepicture{accum1}
             \end{figure}
 
             \column{.5\textwidth}
             \begin{figure}
-                \includegraphics[clip=true, trim = 280pt 0 20pt 0,
-                width=\textwidth]{Solution/potentials-update/max1}
+                \potentialsupdatepicture{max1}
             \end{figure}
         \end{columns}
 
@@ -499,12 +498,12 @@
         \begin{columns}
             \column{.5\textwidth}
             \begin{figure}
-                \includegraphics[clip=true, trim = 280pt 0 20pt 0, width=\textwidth]{Solution/potentials-update/accum2}
+                \potentialsupdatepicture{accum2}
             \end{figure}
 
             \column{.5\textwidth}
             \begin{figure}
-                \includegraphics[clip=true, trim = 280pt 0 20pt 0, width=\textwidth]{Solution/potentials-update/max2}
+                \potentialsupdatepicture{max2}
             \end{figure}
         \end{columns}
 
@@ -517,12 +516,12 @@
         \begin{columns}
             \column{.5\textwidth}
             \begin{figure}
-                \includegraphics[clip=true, trim = 280pt 0 20pt 0, width=\textwidth]{Solution/potentials-update/accum3}
+                \potentialsupdatepicture{accum3}
             \end{figure}
 
             \column{.5\textwidth}
             \begin{figure}
-                \includegraphics[clip=true, trim = 280pt 0 20pt 0, width=\textwidth]{Solution/potentials-update/max3}
+                \potentialsupdatepicture{max3}
             \end{figure}
         \end{columns}
         
@@ -535,12 +534,12 @@
         \begin{columns}
             \column{.5\textwidth}
             \begin{figure}
-                \includegraphics[clip=true, trim = 280pt 0 20pt 0, width=\textwidth]{Solution/potentials-update/accum4}
+                \potentialsupdatepicture{accum4}
             \end{figure}
 
             \column{.5\textwidth}
             \begin{figure}
-                \includegraphics[clip=true, trim = 280pt 0 20pt 0, width=\textwidth]{Solution/potentials-update/max4}
+                \potentialsupdatepicture{max4}
             \end{figure}
         \end{columns}
         
@@ -553,12 +552,12 @@
         \begin{columns}
             \column{.5\textwidth}
             \begin{figure}
-                \includegraphics[clip=true, trim = 280pt 0 20pt 0, width=\textwidth]{Solution/potentials-update/accum_result}
+                \potentialsupdatepicture{accum_result}
             \end{figure}
 
             \column{.5\textwidth}
             \begin{figure}
-                \includegraphics[clip=true, trim = 280pt 0 20pt 0, width=\textwidth]{Solution/potentials-update/max_result}
+                \potentialsupdatepicture{max_result}
             \end{figure}
         \end{columns}
         
@@ -571,10 +570,12 @@
         \begin{figure}
           \begin{columns}
             \column{.5\textwidth}
-            \includegraphics[clip=true, trim = 300pt 20pt 330pt 350pt, width=\textwidth]{Solution/weights-on-path-bad}
+            \includegraphics[clip=true, trim = 300pt 20pt 330pt 350pt,
+            width=\textwidth]{Solution/weights-on-path-bad}
 
             \column{.5\textwidth}
-            \includegraphics[clip=true, trim = 300pt 20pt 330pt 350pt, width=\textwidth]{Solution/weights-on-path-good}
+            \includegraphics[clip=true, trim = 300pt 20pt 330pt 350pt,
+            width=\textwidth]{Solution/weights-on-path-good}
           \end{columns}
 
             На маршруте потенциалы меньше, чем поблизости
