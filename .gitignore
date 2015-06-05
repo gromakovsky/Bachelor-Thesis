@@ -2,7 +2,6 @@ Articles/
 Examples/
 *.aux
 *.toc
-*.sty
 *.nav
 *.pdf
 *.make
