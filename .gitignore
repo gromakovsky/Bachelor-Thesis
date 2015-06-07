@@ -13,4 +13,7 @@ Examples/
 auto/
 *.bbl
 *.temp
+*.bcf
+*.tct
+*.run.xml
 
