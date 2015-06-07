@@ -108,13 +108,18 @@
 такая вершина убирается из маршрута. Этот процесс может повторяться
 несколько раз, для чего каждый отрезок пути разбивается на подотрезки
 меньшей длины. После этого опять производится попытка выкинуть точки.
-И так далее. Ещё одна модификация маршрута вызвана тем, что в связи со
-структурой графа в маршруте могут появляться слишком острые углы (если
-в каком-нибудь контуре, образованном при смещении полигона, есть
-острый угол). В реальных маршрутах не бывает острых углов, поэтому
-выполняется сглаживание маршрута, то есть замена острого угла ломаной,
+И так далее.
+
+Ещё одна модификация маршрута вызвана тем, что в связи со структурой
+графа в маршруте могут появляться слишком острые углы (если в
+каком-нибудь контуре, образованном при смещении полигона, есть острый
+угол). В реальных маршрутах, как правило, не бывает острых углов,
+поэтому выполняется сглаживание маршрута, то есть замена угла,
+величина которого меньше определённого значения, ломаной,
 аппроксимирующей дугу эллипса. При этом корректность такой замены
-проверяется по исходному полигону, не смещённому внутрь.
+проверяется по исходному полигону, не смещённому внутрь. Если ни один
+отрезок ломаной не пересекает границы исходного полигона, то замена
+действительно производится, иначе в маршруте остаётся острый угол.
 
 \begin{figure}
     \includegraphics[width=\textwidth]{Solution/shortcut-and-smoothing}
@@ -184,7 +189,7 @@ $limit$ --- введённое выше максимальное расстоя�
             \State paths $\gets$ \{p\}
             \State min\_len $\gets$ len
             \While{paths.size() < max\_paths\_count}
-                \State update\_weigths(p, len)
+                \State update\_weights(p, len)
                 \State p, len $\gets$ find\_path()
                 \If{$len > C_0 \cdot min\_len$}
                     \State \Return paths
@@ -260,16 +265,21 @@ $1 + (max\_potential - 1) \cdot \frac{limit - d[v]}{limit}$. Она
       потенциала минимально.
 \end{itemize}
 
+\newcommand{\weightsonpathpicture}[1]{
+    \begin{center}
+    \includegraphics[height=.4\textheight, clip=true, trim = 350pt 20pt 330pt
+    400pt]{Solution/#1}
+    \end{center}
+}
+
 \begin{figure}
-    \includegraphics[width=\textwidth, clip=true, trim = 350pt 20pt 330pt
-    350pt]{Solution/weights-on-path-bad}
+    \weightsonpathpicture{weights-on-path-bad}
     \caption{Маршруты несущественно разошлись}
     \label{fig:weights-on-path-bad}
 \end{figure}
 
 \begin{figure}
-    \includegraphics[width=\textwidth, clip=true, trim = 350pt 20pt 330pt
-    350pt]{Solution/weights-on-path-good}
+    \weightsonpathpicture{weights-on-path-good}
     \caption{Маршруты совпадают и оптимальны в начале}
     \label{fig:weights-on-path-good}
 \end{figure}
@@ -287,64 +297,70 @@ $1 + (max\_potential - 1) \cdot \frac{limit - d[v]}{limit}$. Она
 равными $\frac{limit}{M}$, где $M > 1$ --- параметр алгоритма. За счёт
 этого в приведённом примере южная часть белого маршрута совпала с той
 же частью красного, проходящего по кратчайшему пути
-(рис.~\ref{fig:weights-on-path-good}).
+(рисунок~\ref{fig:weights-on-path-good}).
+
+\newcommand{\potentialsupdatepicture}[1]{
+    \begin{center}
+    \includegraphics[height=.42\textheight, clip=true, trim = 150pt 0 10pt 0]{Solution/potentials-update/#1}
+    \end{center}
+}
 
 \begin{figure}
-    \includegraphics[width=\textwidth]{Solution/potentials-update/accum1}
+    \potentialsupdatepicture{accum1}
     \caption{Обновление потенциалов: умножение (1)}
     \label{fig:update-accum1}
 \end{figure}
 
 \begin{figure}
-    \includegraphics[width=\textwidth]{Solution/potentials-update/max1}
+    \potentialsupdatepicture{max1}
     \caption{Обновление потенциалов: максимум (1)}
     \label{fig:update-max1}
 \end{figure}
 
 \begin{figure}
-    \includegraphics[width=\textwidth]{Solution/potentials-update/accum2}
+    \potentialsupdatepicture{accum2}
     \caption{Обновление потенциалов: умножение (2)}
     \label{fig:update-accum2}
 \end{figure}
 
 \begin{figure}
-    \includegraphics[width=\textwidth]{Solution/potentials-update/max2}
+    \potentialsupdatepicture{max2}
     \caption{Обновление потенциалов: максимум (2)}
     \label{fig:update-max2}
 \end{figure}
 
 \begin{figure}
-    \includegraphics[width=\textwidth]{Solution/potentials-update/accum3}
+    \potentialsupdatepicture{accum3}
     \caption{Обновление потенциалов: умножение (3)}
     \label{fig:update-accum3}
 \end{figure}
 
 \begin{figure}
-    \includegraphics[width=\textwidth]{Solution/potentials-update/max3}
+    \potentialsupdatepicture{max3}
     \caption{Обновление потенциалов: максимум (3)}
     \label{fig:update-max3}
 \end{figure}
 
 \begin{figure}
-    \includegraphics[width=\textwidth]{Solution/potentials-update/accum4}
+    \potentialsupdatepicture{accum4}
     \caption{Обновление потенциалов: умножение (4)}
     \label{fig:update-accum4}
 \end{figure}
 
 \begin{figure}
-    \includegraphics[width=\textwidth]{Solution/potentials-update/max4}
+    \potentialsupdatepicture{max4}
     \caption{Обновление потенциалов: максимум (4)}
     \label{fig:update-max4}
 \end{figure}
 
 \begin{figure}
-    \includegraphics[width=\textwidth]{Solution/potentials-update/accum_result}
+    \potentialsupdatepicture{accum_result}
     \caption{Найденные маршруты при использовании умножения}
     \label{fig:update-accum-result}
 \end{figure}
 
 \begin{figure}
-    \includegraphics[width=\textwidth]{Solution/potentials-update/max_result}
+    \potentialsupdatepicture{max_result}
     \caption{Найденные маршруты при использовании максимума}
     \label{fig:update-max-result}
 \end{figure}

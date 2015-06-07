@@ -47,7 +47,7 @@
 воде. Поэтому возникает задача поиска семейств маршрутов. Данная
 задача исследована не так хорошо, как планирование единственного
 маршрута, однако известны различные алгоритмы, обзор которых приведён
-в следующем разделе. При поиске семейств маршрутов по воде естественно
+в следующем разделе~(\ref{sec:existing-algos}). При поиске семейств маршрутов по воде естественно
 требовать, чтобы все маршруты были, неформально говоря, попарно
 непохожи, отличаясь способом обхода существенных препятствий.
 Например, на рисунке \ref{fig:similar-paths} маршруты не имеют общих
@@ -104,7 +104,7 @@
       рёбер, из-за чего поиск может выполняться неприемлимо долго.
 \end{enumerate}
 Поэтому для поиска используется навигационный граф, построение и
-структура которого описаны в следующей главе.
+структура которого описаны в главе~\ref{ch:theoretical-solution}.
 
 \FloatBarrier
 
@@ -156,16 +156,21 @@
     \label{fig:limkim1}
 \end{figure}
 
+\newcommand{\limkimpicture}[1] {
+    \begin{center}
+    \includegraphics[height=.4\textheight, clip=true, trim = 400 100 400
+    40]{Introduction/#1}
+    \end{center}
+}
+
 \begin{figure}
-    \includegraphics[width=\textwidth, clip=true, trim = 300 0 300
-    0]{Introduction/limkim-only-one}
+    \limkimpicture{limkim-only-one}
     \caption{Алгоритмом~\cite{lim2005shortest} найден лишь один маршрут}
     \label{fig:limkim2}
 \end{figure}
 
 \begin{figure}
-    \includegraphics[width=\textwidth, clip=true, trim = 300 0 300
-    0]{Introduction/limkim-desired}
+    \limkimpicture{limkim-desired}
     \caption{Желаемые маршруты}
     \label{fig:limkim3}
 \end{figure}
