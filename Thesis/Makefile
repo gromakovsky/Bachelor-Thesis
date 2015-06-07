@@ -759,7 +759,7 @@ WHICH		?= which
 XARGS		?= xargs
 SLEEP		?= sleep
 # == LaTeX (tetex-provided) ==
-BIBTEX		?= bibtex
+BIBTEX		?= biber
 DVIPS		?= dvips
 LATEX		?= latex
 PDFLATEX	?= pdflatex
@@ -2030,6 +2030,11 @@ endef
 #
 # $(call get-bibs,<aux file>,<targets>)
 define get-bibs
+if [ -n $*.bcf ]; then \
+	grep datasource $*.bcf | sed -e 's/^[^>]*>//g' \
+		-e 's/<.*$$//g' -e '/\.bib$$/!s/$$/.bib/' \
+		-e 's!^!$(addprefix $*.,bbl aux aux.make): !' >> $*.d; \
+fi; \
 $(SED) \
 -e '/^\\bibdata/!d' \
 -e 's/\\bibdata{\([^}]*\)}/\1,/' \
