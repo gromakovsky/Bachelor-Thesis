@@ -1,182 +1,40 @@
 % -*-coding: utf-8-*-
-% This is an AMS-LaTeX v. 1.2 File.
 
-\documentclass{report}
+\documentclass[annotation,times]{itmo-student-thesis}
 
-\usepackage[T2A]{fontenc}
-\usepackage[utf8x]{inputenc}
-\usepackage[english,russian]{babel}
-\usepackage{expdlist}
-\usepackage{graphicx}
 \graphicspath{ {../Images/} }
-\usepackage{amsmath}
-\usepackage{amssymb}
-\usepackage{amsthm}
-\usepackage{amsfonts}
-\usepackage{amsxtra} 
-\usepackage{sty/dbl12}
-\usepackage{srcltx}
-\usepackage{epsfig}
-\usepackage{verbatim}
-\usepackage{sty/rac}
-\usepackage{listings}
 \usepackage{placeins}
-\usepackage{caption}
-\captionsetup[table]{position=t,justification=raggedright,slc=off}
-
 \usepackage{algpseudocode}
 \usepackage{hyperref}
 \hypersetup{linktocpage}
 
-\hoffset = -10mm
-\voffset = -20mm
-\textheight = 230mm
-\textwidth = 165mm
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% Redefine margins and other page formatting
-
-%\setlength{\oddsidemargin}{0.5in}
-
-% Various theorem environments. All of the following have the same numbering
-% system as theorem.
-
-\theoremstyle{plain}
-\newtheorem{theorem}{Теорема}
-\newtheorem{prop}[theorem]{Утверждение}
-\newtheorem{corollary}[theorem]{Следствие}
-\newtheorem{lemma}[theorem]{Лемма}
-\newtheorem{question}[theorem]{Вопрос}
-\newtheorem{conjecture}[theorem]{Гипотеза}
-\newtheorem{assumption}[theorem]{Предположение}
-
-\theoremstyle{definition}
-\newtheorem{definition}[theorem]{Определение}
-\newtheorem{notation}[theorem]{Обозначение}
-\newtheorem{condition}[theorem]{Условие}
-\newtheorem{example}[theorem]{Пример}
-\newtheorem{algorithm}[theorem]{Алгоритм}
-%\newtheorem{introduction}[theorem]{Introduction}
-
-\renewcommand{\proof}{\\\textbf{Доказательство.}~}
-
-%\def\startprog{\begin{lstlisting}[language=Java,basicstyle=\normalsize\ttfamily]}
-
-%\theoremstyle{remark}
-%\newtheorem{remark}[theorem]{Remark}
-%\include{header}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\numberwithin{theorem}{chapter}        % Numbers theorems "x.y" where x
-                                        % is the section number, y is the
-                                        % theorem number
-
-%\renewcommand{\thetheorem}{\arabic{chapter}.\arabic{theorem}}
-
-%\makeatletter                          % This sequence of commands will
-%\let\c@equation\c@theorem              % incorporate equation numbering
-%\makeatother                           % into the theorem numbering scheme
-
-%\renewcommand{\theenumi}{(\roman{enumi})}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%This command creates a box marked ``To Do'' around text.
-%To use type \todo{  insert text here  }.
-
-\newcommand{\todo}[1]{\vspace{5 mm}\par \noindent
-\marginpar{\textsc{ToDo}}
-\framebox{\begin{minipage}[c]{0.95 \textwidth}
-\tt #1 \end{minipage}}\vspace{5 mm}\par}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\binoppenalty=10000
-\relpenalty=10000
+\addbibresource{thesis.bib}
 
 \begin{document}
 
+\studygroup{4537}
+\title{Построение семейств оптимальных маршрутов на морских картах}
+\author{Громаковский И.Е.}
+\supervisor{Ковалев А.С.}
+\supervisordegree{магистр прикладной математики и информатики, начальник отдела, ЗАО «Кронштадт Технологии»}
+\publishyear{2015}
 
-% Begin the front matter as required by Rackham dissertation guidelines
+\researchdirections{Целью настоящей работы является разработка программного модуля, решающего в режиме реального времени задачу поиска семейств оптимальных маршрутов кораблей на морских картах. Под семейством оптимальных маршрутов понимается множество маршрутов между начальной и целевой точкой, отличающихся способом обхода существенных препятствий.}
 
-\initializefrontsections
+\researchpart{Для предобработки карт с целью получения графа были использованы методы вычислительной геометрии. Для поиска маршрутов были разработаны эвристики для обновления весов в графе и провеки критериев похожести маршрутов. С помощью различных оптимизаций удалось добиться работы в режиме реального времени.}
 
-\pagestyle{title}
+\economicpart{С помощью разработанного программного модуля капитаны кораблей могут более эффективно прокладывать маршруты, что может быть экономически выгодно.}
 
-\begin{center}
-Санкт-Петербургский национальный исследовательский университет \\ информационных технологий, механики и оптики
+\ecologypart{Данная работа не оказывает влияния на вопросы экологии и не требует соблюдения никаких особых техник безопасности.}
 
-\vspace{2cm}
+\cwpublications{Данная работа не является продолжением курсовых работ, публикаций на её основе нет.}
 
-Кафедра компьютерных технологий
+\practicalimplications{Предложенный алгоритм был реализован и в настоящее время входит в состав программного обеспечения ЗАО «Кронштадт Технологии». Рекомендуется использование для решения задач поддержки принятия решения в навигационно-тактических системах морского назначения.}
 
-\vspace{3cm}
+\makebachelortitle
 
-{\Large И. Е. Громаковский}
-
-\vspace{2cm}
-
-\vbox{\LARGE\bfseries
-Построение семейств оптимальных маршрутов \\ на морских картах}
-
-\vspace{4cm}
-
-Бакалаврская работа 
-
-\vspace{1cm}
-
-{\Large Научный руководитель: А. С. Ковалев}
-
-\vspace{5cm}
-
-Санкт-Петербург\\ 2015
-\end{center}
-
-\newpage
-
-\setcounter{page}{2}
-\pagestyle{plain}
-
-%\dedicationpage{Put a dedication here}
-% Dedication page
-
-%\startacknowledgementspage
-% Acknowledgements page
-%{Put Acknowledgements here}
-
-% Table of contents, list of figures, etc.
 \tableofcontents
-%\listoffigures
 
-
-\def\t#1{\mbox{\texttt{\hbox{#1}}}}
-\def\b#1{\textbf{#1}}
-\def\tb#1{\t{\b{#1}}}
-
-\def\cln#1{\t{#1}}
-\def\pcn#1{\t{#1}}
-\newcommand{\p}{\par Здесь будет текст...}
-
-\def\drawfigure#1#2#3{
-        \begin{figure}[ht]
-        \centerline{ \includegraphics[width=8cm]{img/#1}}
-        \caption{#2}
-        \label{#3}
-        \end{figure}
-}
-\def\drawfigurex#1#2#3#4{
-        \begin{figure}[ht]
-        \centerline{ \includegraphics[#4]{img/#1}}
-        \caption{#2}
-        \label{#3}
-        \end{figure}
-}
-
-% Chapters
 \startthechapters
 \input{chapters/intro.tex}
 \input{chapters/chapter1.tex}
@@ -184,12 +42,7 @@
 \input{chapters/chapter3.tex}
 \input{chapters/outro.tex}
 
-%\startappendices
-%\label{appendix}
-%\input{appendix}
-
-\bibliographystyle{sty/utf8gost705u}
-\bibliography{thesis}
+\printbibliography[heading=trueHeading]
 
 \end{document}
 
