@@ -1,5 +1,5 @@
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesClass{itmo-student-thesis}[2015/06/04]
+\ProvidesClass{itmo-student-thesis}[2015/06/08 v1.0.2]
 
 \LoadClass[14pt,a4paper]{extreport}
 
@@ -165,6 +165,9 @@
   \let\c@lstlisting\c@algorithm
   \let\thelstlisting\thealgorithm
   \let\ftype@lstlisting\ftype@algorithm % give the floats the same precedence
+  \counterwithout{lstlisting}{chapter}
+  \counterwithout{lstlisting}{section}
+  \counterwithout{lstlisting}{subsection}
 }
      
 
@@ -325,7 +328,7 @@
 
 %% Команды со значениями по умолчанию
 
-\newcommand{\theuniversity}{федеральное государственное автономное образовательное учреждение высшего профессионального образования <<Санкт-Петербургский национальный исследовательский университет информационных технологий, механики и оптики>>}
+\newcommand{\theuniversity}{федеральное государственное автономное образовательное учреждение высшего образования <<Санкт-Петербургский национальный исследовательский университет информационных технологий, механики и оптики>>}
 \newcommand{\university}[1]{\renewcommand{\theuniversity}{#1}}
 
 \newcommand{\thefaculty}{информационных технологий и программирования}
